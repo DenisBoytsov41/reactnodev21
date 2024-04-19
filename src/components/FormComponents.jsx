@@ -1,38 +1,78 @@
 import React from 'react';
 
-const InputField = ({ label, id, type, name, required, minLength, maxLength }) => {
+const InputField = ({ label, id, type, name, value, onChange, required, minLength, maxLength }) => {
   return (
     <div className="form-group">
       <label htmlFor={id}>{label}:</label>
-      <input type={type} autoComplete="off" className="form-control" id={id} name={name} required={required} minLength={minLength} maxLength={maxLength} />
+      <input 
+        type={type} 
+        autoComplete="off" 
+        className="form-control" 
+        id={id} 
+        name={name} 
+        value={value} 
+        onChange={onChange}
+        required={required} 
+        minLength={minLength} 
+        maxLength={maxLength} 
+      />
     </div>
   );
 };
 
-const CheckboxField = ({ label, id, name, required }) => {
+
+const CheckboxField = ({ label, id, name, value, checked, onChange, required }) => {
   return (
     <div className="form-group form-check">
-      <input type="checkbox" autoComplete="off" className="form-check-input" id={id} name={name} required={required} />
+      <input 
+        type="checkbox" 
+        autoComplete="off" 
+        className="form-check-input" 
+        id={id} 
+        name={name} 
+        value={value} 
+        checked={checked} 
+        onChange={onChange} // Добавляем обработчик изменений
+        required={required} 
+      />
       <label className="form-check-label" htmlFor={id}>{label}</label>
     </div>
   );
 };
 
-const SelectField = ({ label, id, name, required, options }) => {
+const SelectField = ({ label, id, name, value, onChange, required, options }) => {
   return (
     <div className="form-group">
       <label htmlFor={id}>{label}:</label>
-      <select className="form-control" autoComplete="off" id={id} name={name} required={required}>
+      <select 
+        className="form-control" 
+        autoComplete="off" 
+        id={id} 
+        name={name} 
+        value={value} 
+        onChange={onChange} // Добавляем обработчик изменений
+        required={required}
+      >
         {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
       </select>
     </div>
   );
 };
 
-const RadioButton = ({ id, name, value, label, required }) => {
+const RadioButton = ({ id, name, value, label, checked, onChange, required }) => {
   return (
     <div className="form-check form-check-inline">
-      <input type="radio" autoComplete="off" className="form-check-input" id={id} name={name} value={value} required={required} />
+      <input 
+        type="radio" 
+        autoComplete="off" 
+        className="form-check-input" 
+        id={id} 
+        name={name} 
+        value={value} 
+        checked={checked} 
+        onChange={onChange} // Добавляем обработчик изменений
+        required={required} 
+      />
       <label className="form-check-label" htmlFor={id}>{label}</label>
     </div>
   );
@@ -45,5 +85,6 @@ const SubmitButton = ({ label }) => {
     </div>
   );
 };
+
 
 export { InputField, CheckboxField, SelectField, RadioButton, SubmitButton };

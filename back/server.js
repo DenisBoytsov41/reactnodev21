@@ -39,7 +39,7 @@ app.post('/register', async (req, res) => {
 
     const hashedPassword = await hashPassword(password);
     
-    const insertQuery = 'INSERT INTO data (Name, Surname, Email, Login, Password, Gender) VALUES (?, ?, ?, ?, ?, ?)';
+    const insertQuery = 'INSERT INTO Users (first_name, last_name, email, login, password, gender) VALUES (?, ?, ?, ?, ?, ?)';
     db.query(insertQuery, [firstName, lastName, email, username, hashedPassword, gender], (insertErr, result) => {
       if (insertErr) {
         console.error('Ошибка при добавлении пользователя: ', insertErr);
@@ -50,7 +50,6 @@ app.post('/register', async (req, res) => {
     });
   });
 });
-
 
 app.listen(PORT, () => {
   console.log(`Сервер работает на порту ${PORT}`);

@@ -21,6 +21,18 @@ function RegistrationForm() {
     };
   }, []);
 
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    agreeTerms: false,
+    age: 'yes',
+    gender: 'male'
+  });
+
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
@@ -29,17 +41,92 @@ function RegistrationForm() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  const handleChange = (e) => {
+    console.log("Я тут");
+    const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
+    if (type === 'checkbox') {
+      setFormData(prevState => ({
+        ...prevState,
+        [name]: newValue
+      }));
+    } else {
+      setFormData({
+        ...formData,
+        [name]: newValue
+      });
+    }
+  };
+  
+  const handleSubmit = async (e) => {
+    console.log(formData);
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+      } else {
+        const errorData = await response.json();
+        console.error(errorData);
+      }
+    } catch (error) {
+      console.error('Ошибка при отправке запроса: ', error);
+    }
+  };
+
   return (
     <div>
-      <form id="registrationForm" method="POST" action="php/process.php">
-        <InputField label="Имя" id="firstName" type="text" name="firstName" required minLength={2} maxLength={15} />
-        <InputField label="Фамилия" id="lastName" type="text" name="lastName" required minLength={2} maxLength={15} />
-        <InputField label="Email" id="email" type="email" name="email" required />
-        <InputField label="Логин" id="username" type="text" name="username" required minLength={6} />
-        <InputField label="Пароль" id="password" type={showPassword ? 'text' : 'password'} name="password" required minLength={8} />
-        <InputField label="Подтверждение пароля" id="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} name="confirmPassword" required />
-        <CheckboxField label="Принимаю правила..." id="agreeTerms" name="agreeTerms" required />
-        <SelectField label="Мне 18 лет" id="age" name="age" required options={[{ value: 'yes', label: 'Да' }, { value: 'no', label: 'Нет' }]} />
+      <form id="registrationForm" onSubmit={handleSubmit}>
+        <InputField
+          label="Имя"
+          id="firstName"
+          type="text"
+          name="firstName"
+          defaultValue={formData.firstName}
+          onChange={handleChange}
+          required
+          minLength={2}
+          maxLength={15}
+        />
+        <InputField
+          label="Фамилия"
+          id="lastName"
+          type="text"
+          name="lastName"
+          defaultValue={formData.lastName}
+          onChange={handleChange}
+          required
+          minLength={2}
+          maxLength={15}
+        />
+        <InputField
+          label="Email"
+          id="email"
+          type="email"
+          name="email"
+          defaultValue={formData.email}
+          onChange={handleChange}
+          required
+        />
+        <InputField
+          label="Логин"
+          id="username"
+          type="text"
+          name="username"
+          defaultValue={formData.username}
+          onChange={handleChange}
+          required
+          minLength={6}
+        />
         <div className="form-group">
           <label htmlFor="password">Пароль:</label>
           <div className="input-group">
@@ -49,6 +136,7 @@ function RegistrationForm() {
               className="form-control"
               id="password"
               name="password"
+              value={formData.password} onChange={handleChange}
               required
             />
             <div className="input-group-append">
@@ -67,6 +155,7 @@ function RegistrationForm() {
               className="form-control"
               id="confirmPassword"
               name="confirmPassword"
+              value={formData.confirmPassword} onChange={handleChange}
               required
             />
             <div className="input-group-append">
@@ -76,6 +165,15 @@ function RegistrationForm() {
             </div>
           </div>
         </div>
+        <CheckboxField
+          label="Принимаю правила..."
+          id="agreeTerms"
+          defaultChecked={formData.agreeTerms}
+          onChange={handleChange}
+          name="agreeTerms"
+          required
+        />
+        <SelectField label="Мне 18 лет" id="age" name="age" value={formData.age} onChange={handleChange} required options={[{ value: 'yes', label: 'Да' }, { value: 'no', label: 'Нет' }]} />
         <SubmitButton label="Зарегистрироваться" />
       </form>
     </div>
