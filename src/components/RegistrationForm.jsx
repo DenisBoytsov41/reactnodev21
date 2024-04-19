@@ -29,8 +29,8 @@ function RegistrationForm() {
     password: '',
     confirmPassword: '',
     agreeTerms: false,
-    age: 'yes',
-    gender: 'male'
+    age: 'Мне 18 лет',
+    gender: 'Мужской'
   });
 
   const handleTogglePassword = () => {
@@ -173,11 +173,29 @@ function RegistrationForm() {
           name="agreeTerms"
           required
         />
-        <SelectField label="Мне 18 лет" id="age" name="age" value={formData.age} onChange={handleChange} required options={[{ value: 'yes', label: 'Да' }, { value: 'no', label: 'Нет' }]} />
+        <SelectField label="Мне 18 лет" id="age" name="age" value={formData.age} onChange={handleChange} required options={[{ value: 'Мне 18 лет', label: 'Да' }, { value: 'Нет 18 лет', label: 'Нет' }]} />
+        <label>Пол:</label><br></br>
+        <RadioButton
+          id="maleGender"
+          name="gender"
+          value="Мужской"
+          label="Мужской"
+          required
+          onChange={handleChange}
+        />
+        <RadioButton
+          id="femaleGender"
+          name="gender"
+          value="Женский"
+          label="Женский"
+          required
+          onChange={handleChange}
+        />
         <SubmitButton label="Зарегистрироваться" />
       </form>
     </div>
   );
+  
 }
 
 export default RegistrationForm;

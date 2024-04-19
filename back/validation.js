@@ -1,10 +1,10 @@
 const bcrypt = require('bcrypt');
 
 const validateRegistration = (data) => {
-  const { firstName, lastName, email, username, password, confirmPassword, acceptRules, age, gender } = data;
+  const { firstName, lastName, email, username, password, confirmPassword, agreeTerms, age, gender } = data;
   const errors = [];
 
-  if (!firstName || !lastName || !email || !username || !password || !confirmPassword || !acceptRules || !age || !gender) {
+  if (!firstName || !lastName || !email || !username || !password || !confirmPassword || !agreeTerms || !age || !gender) {
     errors.push('Все поля должны быть заполнены');
   }
 
@@ -39,7 +39,7 @@ const validateRegistration = (data) => {
   }
 
   // Проверка согласия с правилами
-  if (!acceptRules) {
+  if (!agreeTerms) {
     errors.push('Вы должны принять правила');
   }
 

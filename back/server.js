@@ -22,9 +22,9 @@ app.post('/register', async (req, res) => {
     return;
   }
 
-  const { firstName, lastName, email, username, password, confirmPassword, gender } = req.body;
+  const { firstName, lastName, email, username, password, confirmPassword, agreeTerms, age, gender } = req.body;
 
-  const checkQuery = 'SELECT * FROM data WHERE Login = ? OR Email = ?';
+  const checkQuery = 'SELECT * FROM users WHERE Login = ?';
   db.query(checkQuery, [username, email], async (checkErr, checkResult) => {
     if (checkErr) {
       console.error('Ошибка при проверке пользователя: ', checkErr);
@@ -33,14 +33,15 @@ app.post('/register', async (req, res) => {
     }
 
     if (checkResult.length > 0) {
-      res.status(400).json({ error: 'Пользователь с таким логином или email уже существует' });
+      res.status(400).json({ error: 'Пользователь с таким логином уже существует' });
       return;
     }
 
     const hashedPassword = await hashPassword(password);
+    const hashedConfirmPassword = await hashPassword(confirmPassword);
     
-    const insertQuery = 'INSERT INTO Users (first_name, last_name, email, login, password, gender) VALUES (?, ?, ?, ?, ?, ?)';
-    db.query(insertQuery, [firstName, lastName, email, username, hashedPassword, gender], (insertErr, result) => {
+    const insertQuery = 'INSERT INTO users (first_name, last_name, email, login, password, confirm_password, accept_rules, age_status, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+    db.query(insertQuery, [firstName, lastName, email, username, hashedPassword, hashedConfirmPassword, agreeTerms, age, gender], (insertErr, result) => {
       if (insertErr) {
         console.error('Ошибка при добавлении пользователя: ', insertErr);
         res.status(500).json({ error: 'Ошибка сервера' });
