@@ -1,0 +1,35 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 600px !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+    padding: 50px 0 !important;
+}
+
+.btn {
+    display: inline-block !important;
+    padding: 10px 20px !important;
+    margin: 10px !important;
+    background-color: #007bff !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer !important;
+    border-radius: 5px !important;
+}
+
+.btn:hover {
+    background-color: #0056b3 !important;
+}
+
+.form-container {
+    display: none;
+    text-align: left;
+}
+
+body.dark-mode {
+    background-color: #222;
+    color: #fff;
+}
