@@ -56,5 +56,14 @@ const hashPassword = async (password) => {
     throw error;
   }
 };
+const comparePasswords = async (password, hashedPassword) => {
+  try {
+    const match = await bcrypt.compare(password, hashedPassword);
+    return match;
+  } catch (error) {
+    console.error('Ошибка при сравнении паролей: ', error);
+    throw error;
+  }
+};
 
-module.exports = { validateRegistration, hashPassword };
+module.exports = { validateRegistration, hashPassword,comparePasswords };

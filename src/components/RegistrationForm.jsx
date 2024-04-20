@@ -32,8 +32,8 @@ function RegistrationForm() {
     confirmPassword: '',
     agreeTerms: false,
     age: 'Мне 18 лет',
-    gender: '', // изменение значения
-    gender_f: 0 // изменение значения
+    gender: '',
+    gender_f: 0
   });
 
   const handleTogglePassword = () => {
@@ -72,7 +72,8 @@ function RegistrationForm() {
         },
         body: JSON.stringify(formData)
       });
-
+      setShowPassword(false);
+      setShowConfirmPassword(false);
       if (response.ok) {
         const data = await response.json();
         console.log("123 " + data.message)
@@ -206,7 +207,7 @@ function RegistrationForm() {
           name="gender"
           value="Мужской"
           label="Мужской"
-          checked={formData.gender === "Мужской"} // изменение
+          checked={formData.gender === "Мужской"}
           onChange={handleChange}
         />
         <RadioButton
@@ -214,7 +215,7 @@ function RegistrationForm() {
           name="gender"
           value="Женский"
           label="Женский"
-          checked={formData.gender === "Женский"} // изменение
+          checked={formData.gender === "Женский"}
           onChange={handleChange}
         />
         <SubmitButton label="Зарегистрироваться" />
