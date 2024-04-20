@@ -16,9 +16,12 @@ app.use((req, res, next) => {
 });
 
 app.post('/register', async (req, res) => {
-  const errors = validateRegistration(req.body);
-  if (errors.length > 0) {
-    res.status(400).json({ errors });
+  const validationResult = validateRegistration(req.body);
+  console.log(validationResult.success);
+  console.log(validationResult.errors);
+  if (!validationResult.success) {
+    console.log('I am here')
+    res.status(402).json({ error: validationResult.errors });
     return;
   }
 
@@ -38,7 +41,7 @@ app.post('/register', async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    const hashedConfirmPassword = await hashPassword(confirmPassword);
+    const hashedConfirmPassword = hashedPassword;
     
     const insertQuery = 'INSERT INTO users (first_name, last_name, email, login, password, confirm_password, accept_rules, age_status, gender) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
     db.query(insertQuery, [firstName, lastName, email, username, hashedPassword, hashedConfirmPassword, agreeTerms, age, gender], (insertErr, result) => {

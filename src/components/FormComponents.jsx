@@ -32,7 +32,7 @@ const CheckboxField = ({ label, id, name, value, checked, onChange, required }) 
         name={name} 
         value={value} 
         checked={checked} 
-        onChange={onChange} // Добавляем обработчик изменений
+        onChange={onChange}
         required={required} 
       />
       <label className="form-check-label" htmlFor={id}>{label}</label>
@@ -50,7 +50,7 @@ const SelectField = ({ label, id, name, value, onChange, required, options }) =>
         id={id} 
         name={name} 
         value={value} 
-        onChange={onChange} // Добавляем обработчик изменений
+        onChange={onChange}
         required={required}
       >
         {options.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
@@ -70,7 +70,7 @@ const RadioButton = ({ id, name, value, label, checked, onChange, required }) =>
         name={name} 
         value={value} 
         checked={checked} 
-        onChange={onChange} // Добавляем обработчик изменений
+        onChange={onChange}
         required={required} 
       />
       <label className="form-check-label" htmlFor={id}>{label}</label>

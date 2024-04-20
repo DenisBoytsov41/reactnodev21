@@ -60,10 +60,12 @@ function App() {
       <ThemeToggle onClick={handleThemeToggle} darkMode={darkMode} />
       <div style={{ display: showLoginForm ? 'block' : 'none' }} className="form-container">
         <h3>Форма авторизации</h3>
+        <div id="loginErrors"></div>
         <LoginForm />
       </div>
       <div style={{ display: showRegistrationForm ? 'block' : 'none' }} className="form-container">
         <h3>Форма регистрации</h3>
+        <div id="registrationErrors"></div>
         <RegistrationForm />
       </div>
       <CookieBanner show={showCookieBanner} onAccept={handleAcceptCookiesBtnClick} />

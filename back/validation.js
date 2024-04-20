@@ -5,7 +5,7 @@ const validateRegistration = (data) => {
   const errors = [];
 
   if (!firstName || !lastName || !email || !username || !password || !confirmPassword || !agreeTerms || !age || !gender) {
-    errors.push('Все поля должны быть заполнены');
+    return { success: false, errors: ['Все поля должны быть заполнены'] }; // Возвращаем ошибку
   }
 
   const nameRegex = /^[а-яА-Яa-zA-Z]+(?:[-\s][а-яА-Яa-zA-Z]+)?$/u;
@@ -13,37 +13,37 @@ const validateRegistration = (data) => {
 
   // Проверка имени и фамилии
   if (!nameRegex.test(firstName) || !nameRegex.test(lastName)) {
-    errors.push('Недопустимое имя или фамилия');
+    return { success: false, errors: ['Недопустимое имя или фамилия'] }; // Возвращаем ошибку
   }
 
   // Проверка email
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    errors.push('Недопустимый email');
+    return { success: false, errors: ['Недопустимый email'] }; // Возвращаем ошибку
   }
 
   // Проверка логина
   if (username.length < 6) {
-    errors.push('Логин должен содержать не менее 6 символов');
+    return { success: false, errors: ['Логин должен содержать не менее 6 символов'] }; // Возвращаем ошибку
   }
 
   // Проверка пароля
   const passwordRegex = /^(?=.*\d)(?=.*[a-zа-я])(?=.*[A-ZА-Я])(?=.*\W).{8,}$/;
   if (!passwordRegex.test(password)) {
-    errors.push('Пароль должен содержать не менее 8 символов и включать в себя хотя бы одну заглавную букву, одну строчную букву, одну цифру и один символ');
+    return { success: false, errors: ['Пароль должен содержать не менее 8 символов и включать в себя хотя бы одну заглавную букву, одну строчную букву, одну цифру и один символ'] }; // Возвращаем ошибку
   }
 
   // Проверка подтверждения пароля
   if (password !== confirmPassword) {
-    errors.push('Пароли не совпадают');
+    return { success: false, errors: ['Пароли не совпадают'] }; // Возвращаем ошибку
   }
 
   // Проверка согласия с правилами
   if (!agreeTerms) {
-    errors.push('Вы должны принять правила');
+    return { success: false, errors: ['Вы должны принять правила'] }; // Возвращаем ошибку
   }
 
-  return errors;
+  return { success: true, errors: [] }; // Возвращаем успех
 };
 
 const hashPassword = async (password) => {

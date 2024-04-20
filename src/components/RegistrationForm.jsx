@@ -5,6 +5,8 @@ import '../css/mainstyle.css';
 function RegistrationForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registrationMessage, setRegistrationMessage] = useState('');
+  const [registrationError, setRegistrationError] = useState('');
 
   useEffect(() => {
     const addStylesAndScripts = () => {
@@ -30,7 +32,8 @@ function RegistrationForm() {
     confirmPassword: '',
     agreeTerms: false,
     age: 'Мне 18 лет',
-    gender: 'Мужской'
+    gender: '', // изменение значения
+    gender_f: 0 // изменение значения
   });
 
   const handleTogglePassword = () => {
@@ -60,7 +63,6 @@ function RegistrationForm() {
   };
   
   const handleSubmit = async (e) => {
-    console.log(formData);
     e.preventDefault();
     try {
       const response = await fetch('http://localhost:5000/register', {
@@ -73,25 +75,49 @@ function RegistrationForm() {
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
+        console.log("123 " + data.message)
+        setRegistrationMessage(data.message);
+        setRegistrationError('');
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          username: '',
+          password: '',
+          confirmPassword: '',
+          agreeTerms: false,
+          age: '',
+          gender: '',
+          gender_f: 0
+        });
+        setTimeout(() => {
+          setRegistrationMessage('');
+        }, 5000);
       } else {
         const errorData = await response.json();
-        console.error(errorData);
+        console.log("1 " + errorData.error)
+        setRegistrationError(errorData.error);
+        setRegistrationMessage('');
+        setTimeout(() => {
+          setRegistrationError('');
+        }, 5000);
       }
     } catch (error) {
       console.error('Ошибка при отправке запроса: ', error);
     }
   };
 
-  return (
+  return (  
     <div>
+      {registrationMessage && <div className="alert alert-success">{registrationMessage}</div>}
+      {registrationError && <div className="alert alert-danger">{registrationError}</div>}
       <form id="registrationForm" onSubmit={handleSubmit}>
         <InputField
           label="Имя"
           id="firstName"
           type="text"
           name="firstName"
-          defaultValue={formData.firstName}
+          value={formData.firstName}
           onChange={handleChange}
           required
           minLength={2}
@@ -102,7 +128,7 @@ function RegistrationForm() {
           id="lastName"
           type="text"
           name="lastName"
-          defaultValue={formData.lastName}
+          value={formData.lastName}
           onChange={handleChange}
           required
           minLength={2}
@@ -113,7 +139,7 @@ function RegistrationForm() {
           id="email"
           type="email"
           name="email"
-          defaultValue={formData.email}
+          value={formData.email}
           onChange={handleChange}
           required
         />
@@ -122,7 +148,7 @@ function RegistrationForm() {
           id="username"
           type="text"
           name="username"
-          defaultValue={formData.username}
+          value={formData.username}
           onChange={handleChange}
           required
           minLength={6}
@@ -168,7 +194,7 @@ function RegistrationForm() {
         <CheckboxField
           label="Принимаю правила..."
           id="agreeTerms"
-          defaultChecked={formData.agreeTerms}
+          checked={formData.agreeTerms}
           onChange={handleChange}
           name="agreeTerms"
           required
@@ -180,7 +206,7 @@ function RegistrationForm() {
           name="gender"
           value="Мужской"
           label="Мужской"
-          required
+          checked={formData.gender === "Мужской"} // изменение
           onChange={handleChange}
         />
         <RadioButton
@@ -188,7 +214,7 @@ function RegistrationForm() {
           name="gender"
           value="Женский"
           label="Женский"
-          required
+          checked={formData.gender === "Женский"} // изменение
           onChange={handleChange}
         />
         <SubmitButton label="Зарегистрироваться" />
