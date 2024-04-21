@@ -1,6 +1,36 @@
 const db = require('../db');
+const jwt = require('jsonwebtoken');
 const { validateRegistration, hashPassword, comparePasswords } = require('../validation');
+const crypto = require('crypto');
 
+// Генерация случайной строки в формате hex
+const generateRandomSecret = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
+
+// Генерация ACCESS_TOKEN_SECRET и REFRESH_TOKEN_SECRET
+const ACCESS_TOKEN_SECRET = generateRandomSecret();
+const REFRESH_TOKEN_SECRET = generateRandomSecret();
+
+// Установка секретных ключей в переменные среды
+process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
+process.env.REFRESH_TOKEN_SECRET = REFRESH_TOKEN_SECRET;
+
+// Установка времени истечения токенов (в секундах)
+process.env.REFRESH_TOKEN_EXPIRATION = 3600;
+process.env.ACCESS_TOKEN_EXPIRATION = 120;
+
+// Генерация Access Token
+const generateAccessToken = (user) => {
+  return jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
+};
+
+// Генерация Refresh Token
+const generateRefreshToken = (user) => {
+  return jwt.sign({ username: user.username }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION });
+};
+
+// Аутентификация пользователя
 const loginUser = async (req, res) => {
   const { loginUsername, loginPassword } = req.body;
 
@@ -16,18 +46,26 @@ const loginUser = async (req, res) => {
     }
 
     const user = checkResult[0];
-    console.log(user);
-    console.log(user.password);
-    console.log(loginPassword);
     const isPasswordValid = await comparePasswords(loginPassword, user.password);
     if (!isPasswordValid) {
       return res.status(402).json({ error: 'Неверный пароль' });
     }
+    console.log('Пользователь: ' + loginUsername);
+    const accessToken = generateAccessToken({ username: loginUsername });
+    const refreshToken = generateRefreshToken({ username: loginUsername });
 
-    res.status(200).json({ message: 'Вход в систему успешен' });
+    const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
+    db.query(insertTokenQuery, [loginUsername, refreshToken, process.env.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
+      if (insertErr) {
+        console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
+        return res.status(500).json({ error: 'Ошибка сервера' });
+      }
+      res.status(200).json({message: 'Вход в систему', accessToken: accessToken, refreshToken: refreshToken, username: loginUsername, jwtToken: accessToken });
+    });
   });
 };
 
+// Регистрация пользователя
 const registerUser = async (req, res) => {
   const validationResult = validateRegistration(req.body);
   if (!validationResult.success) {
@@ -56,12 +94,39 @@ const registerUser = async (req, res) => {
         console.error('Ошибка при добавлении пользователя: ', insertErr);
         return res.status(500).json({ error: 'Ошибка сервера' });
       }
-      res.status(200).json({ message: 'Пользователь успешно зарегистрирован' });
+      res.status(200).json({ message: 'Пользователь успешно зарегистрирован', username: username, jwtToken: null });
+    });
+  });
+};
+
+// Обновление Access Token
+const refreshToken = async (req, res) => {
+  const refreshToken = req.body.refreshToken;
+  if (refreshToken == null) return res.sendStatus(401);
+
+  db.query('SELECT * FROM UserToken WHERE refreshToken = ?', [refreshToken], async (err, result) => {
+    if (err) {
+      console.error('Ошибка при проверке refresh token в базе данных: ', err);
+      return res.sendStatus(500);
+    }
+    if (result.length === 0) return res.sendStatus(403);
+
+    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+      if (err) return res.sendStatus(403);
+      const accessToken = generateAccessToken({ username: user.username });
+      db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshToken], (deleteErr, deleteResult) => {
+        if (deleteErr) {
+          console.error('Ошибка при удалении refresh token из базы данных: ', deleteErr);
+          return res.sendStatus(500);
+        }
+        res.json({ accessToken: accessToken });
+      });
     });
   });
 };
 
 module.exports = {
-    registerUser,
-    loginUser,
-  };
+  registerUser,
+  loginUser,
+  refreshToken,
+};

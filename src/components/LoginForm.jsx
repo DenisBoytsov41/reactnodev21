@@ -1,6 +1,8 @@
 /* global grecaptcha */
 import React, { useState } from 'react';
 import { InputField, SubmitButton } from './FormComponents';
+import { useAuth } from './AuthContext';
+import PersonalCabinet from './PersonalCabinet'; // Импортируем компонент PersonalCabinet
 
 const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -8,6 +10,7 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
   const [loginError, setLoginError] = useState('');
+  const { login, isLoggedIn } = useAuth(); // Добавляем isLoggedIn из контекста аутентификации
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
@@ -35,12 +38,12 @@ const LoginForm = () => {
         const data = await response.json();
         console.log(data.message);
         setLoginMessage(data.message);
-        setUsername('');
-        setPassword('');
-        setShowPassword(false);
+        localStorage.setItem('accessToken', data.accessToken);
+        localStorage.setItem('refreshToken', data.refreshToken);
         if (typeof grecaptcha !== 'undefined') {
           grecaptcha.reset();
         }
+        login();
       } else {
         const errorData = await response.json();
         console.error(errorData.error);

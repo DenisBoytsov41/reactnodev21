@@ -38,11 +38,12 @@ const GlobalAssets = () => {
     addStylesAndScripts();
 
     return () => {
-      const linksToRemove = document.querySelectorAll('link[href^="https://stackpath.bootstrapcdn.com"]');
-      linksToRemove.forEach((link) => document.head.removeChild(link));
-
       const scriptsToRemove = document.querySelectorAll('script[src^="https://"]');
-      scriptsToRemove.forEach((script) => document.body.removeChild(script));
+      scriptsToRemove.forEach((script) => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
     };
   }, []);
 

@@ -19,7 +19,11 @@ function RegistrationForm() {
 
     return () => {
       const scriptsToRemove = document.querySelectorAll('script[src^="https://"]');
-      scriptsToRemove.forEach((script) => document.body.removeChild(script));
+      scriptsToRemove.forEach((script) => {
+        if (script.parentNode) {
+          script.parentNode.removeChild(script);
+        }
+      });
     };
   }, []);
 
