@@ -46,12 +46,10 @@ const LoginForm = () => {
         const data = await response.json();
         console.log(data.message);
         setLoginMessage(data.message);
-        localStorage.setItem('accessToken', data.accessToken);
-        localStorage.setItem('refreshToken', data.refreshToken);
         if (typeof grecaptcha !== 'undefined') {
           grecaptcha.reset();
         }
-        login();
+        login(data.refreshToken,data.accessToken);
       } else {
         const errorData = await response.json();
         console.error(errorData.error);

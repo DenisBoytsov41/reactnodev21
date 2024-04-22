@@ -1,3 +1,7 @@
+/* global ACCESS_TOKEN_EXPIRATION */
+/* global REFRESH_TOKEN_EXPIRATION */
+/* global ACCESS_TOKEN_SECRET */
+/* global REFRESH_TOKEN_SECRET */
 const db = require('../db');
 const jwt = require('jsonwebtoken');
 const { validateRegistration, hashPassword, comparePasswords } = require('../validation');
@@ -8,40 +12,41 @@ const generateRandomSecret = () => {
   return crypto.randomBytes(32).toString('hex');
 };
 
-// Генерация ACCESS_TOKEN_SECRET и REFRESH_TOKEN_SECRET
-const ACCESS_TOKEN_SECRET = generateRandomSecret();
-const REFRESH_TOKEN_SECRET = generateRandomSecret();
-
-// Установка секретных ключей в переменные среды
-process.env.ACCESS_TOKEN_SECRET = ACCESS_TOKEN_SECRET;
-process.env.REFRESH_TOKEN_SECRET = REFRESH_TOKEN_SECRET;
-
-// Установка времени истечения токенов (в секундах)
-process.env.REFRESH_TOKEN_EXPIRATION = 3600;
-process.env.ACCESS_TOKEN_EXPIRATION = 120;
-
 const generateAccessToken = (user) => {
+  console.log("Я тут1");
   return jwt.sign({ 
     username: user.username, 
     guestMode: user.guestMode, 
     currentTheme: user.currentTheme, 
     error: user.error 
-  }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
+  }, global.ACCESS_TOKEN_SECRET, { expiresIn: global.ACCESS_TOKEN_EXPIRATION });
 };
 
-// Генерация Refresh Token с дополнительными данными
 const generateRefreshToken = (user) => {
+  console.log("Я тут2");
+  console.log(global.REFRESH_TOKEN_SECRET);
   return jwt.sign({ 
     username: user.username, 
-    guestMode: user.guestMode, 
+    guestMode: user.guestMode,
     currentTheme: user.currentTheme, 
     error: user.error 
-  }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION });
+  }, global.REFRESH_TOKEN_SECRET, { expiresIn: global.REFRESH_TOKEN_EXPIRATION });
 };
 
-// Аутентификация пользователя
 const loginUser = async (req, res) => {
   const { loginUsername, loginPassword } = req.body;
+  console.log("Я тут2312");
+  // Генерация ACCESS_TOKEN_SECRET и REFRESH_TOKEN_SECRET
+  global.ACCESS_TOKEN_SECRET = generateRandomSecret();
+  global.REFRESH_TOKEN_SECRET = generateRandomSecret();
+
+  // Установка секретных ключей в переменные среды
+  global.REFRESH_TOKEN_EXPIRATION = 3600;
+  global.ACCESS_TOKEN_EXPIRATION = 120;
+
+  // Установка времени истечения токенов (в секундах)
+  global.REFRESH_TOKEN_EXPIRATION = 3600;
+  global.ACCESS_TOKEN_EXPIRATION = 120;
 
   const checkQuery = 'SELECT * FROM users WHERE Login = ?';
   db.query(checkQuery, [loginUsername], async (checkErr, checkResult) => {
@@ -60,15 +65,24 @@ const loginUser = async (req, res) => {
       return res.status(402).json({ error: 'Неверный пароль' });
     }
 
-    // Получаем текущую тему пользователя из базы данных
-    const themeQuery = 'SELECT theme FROM userthemes WHERE user = ?';
-    db.query(themeQuery, [loginUsername], (themeErr, themeResult) => {
+    const themeQuery = 'SELECT theme FROM userstheme WHERE login = ?';
+    db.query(themeQuery, [loginUsername], async (themeErr, themeResult) => {
       if (themeErr) {
         console.error('Ошибка при получении текущей темы пользователя: ', themeErr);
         return res.status(500).json({ error: 'Ошибка сервера' });
       }
 
-      const currentTheme = themeResult.length > 0 ? themeResult[0].theme : 'light';
+      let currentTheme = 'light';
+      if (themeResult.length === 0) {
+        const insertThemeQuery = 'INSERT INTO userstheme (login, theme) VALUES (?, ?)';
+        db.query(insertThemeQuery, [loginUsername, currentTheme], (insertThemeErr, insertThemeResult) => {
+          if (insertThemeErr) {
+            console.error('Ошибка при создании темы пользователя: ', insertThemeErr);
+          }
+        });
+      } else {
+        currentTheme = themeResult[0].theme;
+      }
 
       const accessToken = generateAccessToken({ 
         username: loginUsername, 
@@ -84,7 +98,7 @@ const loginUser = async (req, res) => {
       });
 
       const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
-      db.query(insertTokenQuery, [loginUsername, refreshToken, process.env.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
+      db.query(insertTokenQuery, [loginUsername, refreshToken, global.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
         if (insertErr) {
           console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
           return res.status(500).json({ error: 'Ошибка сервера' });
@@ -100,6 +114,7 @@ const loginUser = async (req, res) => {
     });
   });
 };
+
 
 // Регистрация пользователя
 const registerUser = async (req, res) => {
@@ -147,7 +162,7 @@ const refreshToken = async (req, res) => {
     }
     if (result.length === 0) return res.sendStatus(403);
 
-    jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET, (err, user) => {
+    jwt.verify(refreshToken, global.REFRESH_TOKEN_SECRET, (err, user) => {
       if (err) return res.sendStatus(403);
       const accessToken = generateAccessToken({ username: user.username });
       db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshToken], (deleteErr, deleteResult) => {

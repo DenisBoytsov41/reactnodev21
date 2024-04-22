@@ -19,7 +19,10 @@ app.use((req, res, next) => {
 app.use('/', routes);
 
 const removeExpiredTokens = () => {
-  const currentDate = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  const moment = require('moment-timezone');
+  const currentDate = moment.tz('Europe/Moscow').format('YYYY-MM-DD HH:mm:ss');
+  console.log(currentDate);
+
   const deleteQuery = 'DELETE FROM UserToken WHERE expiresIn < ?';
   db.query(deleteQuery, [currentDate], (err, result) => {
     if (err) {

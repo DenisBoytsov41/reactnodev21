@@ -11,6 +11,9 @@ import { useCookie } from './components/useCookie';
 import './css/mainstyle.css';
 import './css/cockie.css';
 import './css/personal_cabinet.css';
+import { jwtDecode } from "jwt-decode" ;
+import clearExpiredTokens from './components/tokenUtils';
+const schedule = require('node-schedule');
 
 function App() {
   const [showLoginForm, setShowLoginForm] = useState(false);
@@ -20,16 +23,17 @@ function App() {
   const { isLoggedIn, login, logout } = useAuth(); 
   const { cookieAccepted, acceptCookie } = useCookie('cookiesAccepted');
 
+
   useEffect(() => {
     const loggedInState = localStorage.getItem('isLoggedIn');
     if (loggedInState === 'true') {
       setShowPersonalCabinet(true);
       setShowLoginForm(false);
-      login();
       // Извлекаем данные из токена
       const accessToken = localStorage.getItem('accessToken');
+      console.log("accessToken: " + accessToken)
       if (accessToken) {
-        const decodedToken = jwt_decode(accessToken);
+        const decodedToken = jwtDecode(accessToken);
         setUsername(decodedToken.username);
         setJwtToken(accessToken);
         setGuestMode(decodedToken.guestMode);
@@ -38,7 +42,6 @@ function App() {
       }
     } else {
       setShowPersonalCabinet(false);
-      logout();
     }
   }, [isLoggedIn, login, logout]);
 
@@ -88,6 +91,12 @@ function App() {
   const handleAcceptCookiesBtnClick = () => {
     acceptCookie();
   };
+
+  // Запуск расписания для проверки просроченных токенов каждые 5 минут
+  const job = schedule.scheduleJob('*/5 * * * *', () => {
+    clearExpiredTokens();
+  });
+
 
   return (
     <div className="container">

@@ -4,6 +4,7 @@ import { useAuth } from './AuthContext';
 
 const PersonalCabinet = ({ username, jwtToken, guestMode, currentTheme, error }) => {
   const { logout } = useAuth();
+  console.log("Токен: " + jwtToken);
 
   const handleLogout = async () => {
     try {
