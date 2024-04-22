@@ -7,32 +7,52 @@ import MyButton from './components/MyButton';
 import { useAuth } from './components/AuthContext'; 
 import PersonalCabinet from './components/PersonalCabinet';
 import GlobalAssets from './components/GlobalAssets';
+import { useCookie } from './components/useCookie';
+import './css/mainstyle.css';
+import './css/cockie.css';
+import './css/personal_cabinet.css';
 
 function App() {
   const [showLoginForm, setShowLoginForm] = useState(false);
   const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const [showPersonalCabinet, setShowPersonalCabinet] = useState(false);
-  const [showCookieBanner, setShowCookieBanner] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const { isLoggedIn, setLoggedIn } = useAuth(); // Добавляем функцию для установки состояния входа
+  const { isLoggedIn, login, logout } = useAuth(); 
+  const { cookieAccepted, acceptCookie } = useCookie('cookiesAccepted');
 
   useEffect(() => {
-    const cookiesAccepted = localStorage.getItem('cookiesAccepted');
-    if (cookiesAccepted === 'true') {
-      setShowCookieBanner(false);
-    }
-    // Проверяем сохранённое состояние входа в локальном хранилище
     const loggedInState = localStorage.getItem('isLoggedIn');
     if (loggedInState === 'true') {
       setShowPersonalCabinet(true);
+      setShowLoginForm(false);
+      login();
+      // Извлекаем данные из токена
+      const accessToken = localStorage.getItem('accessToken');
+      if (accessToken) {
+        const decodedToken = jwt_decode(accessToken);
+        setUsername(decodedToken.username);
+        setJwtToken(accessToken);
+        setGuestMode(decodedToken.guestMode);
+        setCurrentTheme(decodedToken.currentTheme);
+        setError(decodedToken.error);
+      }
+    } else {
+      setShowPersonalCabinet(false);
+      logout();
     }
-  }, []); 
+  }, [isLoggedIn, login, logout]);
+
+  // Определения переменных
+  const [username, setUsername] = useState('');
+  const [jwtToken, setJwtToken] = useState('');
+  const [guestMode, setGuestMode] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('');
+  const [error, setError] = useState('');
 
   const handleLoginBtnClick = () => {
     setShowLoginForm(true);
     setShowRegistrationForm(false);
     setShowPersonalCabinet(false);
-    console.log("Login button clicked");
   };
 
   const handleRegisterBtnClick = () => {
@@ -45,22 +65,28 @@ function App() {
     setDarkMode(prevMode => !prevMode);
   };
 
+  useEffect(() => {
+    const toggleTheme = () => {
+      document.body.classList.toggle("dark-mode", darkMode);
+    };
+
+    toggleTheme();
+  }, [darkMode]);
+
   const handleLoginSuccess = () => {
     setShowLoginForm(false);
     setShowRegistrationForm(false);
     setShowPersonalCabinet(true);
-    setLoggedIn(true); // Устанавливаем состояние входа в true при успешной авторизации
-    console.log("Login success");
+    login();
   };
 
   const handleLogout = () => {
     setShowPersonalCabinet(false);
-    setLoggedIn(false); // Устанавливаем состояние входа в false при выходе из аккаунта
+    logout();
   };
 
   const handleAcceptCookiesBtnClick = () => {
-    setShowCookieBanner(false);
-    localStorage.setItem('cookiesAccepted', true);
+    acceptCookie();
   };
 
   return (
@@ -68,7 +94,14 @@ function App() {
       {isLoggedIn ? (
         <div>
           <GlobalAssets />
-          <PersonalCabinet onLogout={handleLogout} />
+          <PersonalCabinet
+            username={username}
+            jwtToken={jwtToken}
+            guestMode={guestMode}
+            currentTheme={currentTheme}
+            error={error}
+            onLogout={handleLogout} 
+          />
         </div>        
       ) : (
         <div>
@@ -87,8 +120,8 @@ function App() {
             <div id="registrationErrors"></div>
             <RegistrationForm />
           </div>
-          <CookieBanner show={showCookieBanner} onAccept={handleAcceptCookiesBtnClick} />
-        </div>
+          <CookieBanner show={!cookieAccepted} onAccept={handleAcceptCookiesBtnClick} />
+        </div>  
       )}
     </div>
   );

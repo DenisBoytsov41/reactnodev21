@@ -1,3 +1,4 @@
+/* global grecaptcha */
 import React from 'react';
 import { useAuth } from './AuthContext';
 
@@ -6,14 +7,14 @@ const PersonalCabinet = ({ username, jwtToken, guestMode, currentTheme, error })
 
   const handleLogout = async () => {
     try {
-      const response = await fetch('/logout', {
+      const response = await fetch('http://localhost:5000/logout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           username: username,
-          token: jwtToken,
+          refreshToken: jwtToken,
           error: error
         })
       });
@@ -21,6 +22,9 @@ const PersonalCabinet = ({ username, jwtToken, guestMode, currentTheme, error })
       if (response.ok) {
         console.log('Успешно отправлен запрос на logout');
         window.location.href = '/';
+        if (typeof grecaptcha !== 'undefined') {
+          grecaptcha.reset();
+        }
       } else {
         console.error('Ошибка при отправке запроса на logout:', response.status);
       }

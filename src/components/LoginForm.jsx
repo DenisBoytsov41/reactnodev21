@@ -1,8 +1,7 @@
 /* global grecaptcha */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { InputField, SubmitButton } from './FormComponents';
 import { useAuth } from './AuthContext';
-import PersonalCabinet from './PersonalCabinet'; // Импортируем компонент PersonalCabinet
 
 const LoginForm = () => {
   const [username, setUsername] = useState('');
@@ -10,11 +9,20 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
   const [loginError, setLoginError] = useState('');
-  const { login, isLoggedIn } = useAuth(); // Добавляем isLoggedIn из контекста аутентификации
+  const { login, isLoggedIn } = useAuth(); 
 
   const handleTogglePassword = () => {
     setShowPassword(!showPassword);
   };
+
+  useEffect(() => {
+    if (typeof grecaptcha !== 'undefined') {
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+  }, []);
+  
 
   const handleRecaptchaChange = (response) => {
     console.log('Ответ капчи:', response);

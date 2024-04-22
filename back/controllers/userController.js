@@ -20,14 +20,23 @@ process.env.REFRESH_TOKEN_SECRET = REFRESH_TOKEN_SECRET;
 process.env.REFRESH_TOKEN_EXPIRATION = 3600;
 process.env.ACCESS_TOKEN_EXPIRATION = 120;
 
-// Генерация Access Token
 const generateAccessToken = (user) => {
-  return jwt.sign({ username: user.username }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
+  return jwt.sign({ 
+    username: user.username, 
+    guestMode: user.guestMode, 
+    currentTheme: user.currentTheme, 
+    error: user.error 
+  }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: process.env.ACCESS_TOKEN_EXPIRATION });
 };
 
-// Генерация Refresh Token
+// Генерация Refresh Token с дополнительными данными
 const generateRefreshToken = (user) => {
-  return jwt.sign({ username: user.username }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION });
+  return jwt.sign({ 
+    username: user.username, 
+    guestMode: user.guestMode, 
+    currentTheme: user.currentTheme, 
+    error: user.error 
+  }, process.env.REFRESH_TOKEN_SECRET, { expiresIn: process.env.REFRESH_TOKEN_EXPIRATION });
 };
 
 // Аутентификация пользователя
@@ -50,17 +59,44 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(402).json({ error: 'Неверный пароль' });
     }
-    console.log('Пользователь: ' + loginUsername);
-    const accessToken = generateAccessToken({ username: loginUsername });
-    const refreshToken = generateRefreshToken({ username: loginUsername });
 
-    const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
-    db.query(insertTokenQuery, [loginUsername, refreshToken, process.env.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
-      if (insertErr) {
-        console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
+    // Получаем текущую тему пользователя из базы данных
+    const themeQuery = 'SELECT theme FROM userthemes WHERE user = ?';
+    db.query(themeQuery, [loginUsername], (themeErr, themeResult) => {
+      if (themeErr) {
+        console.error('Ошибка при получении текущей темы пользователя: ', themeErr);
         return res.status(500).json({ error: 'Ошибка сервера' });
       }
-      res.status(200).json({message: 'Вход в систему', accessToken: accessToken, refreshToken: refreshToken, username: loginUsername, jwtToken: accessToken });
+
+      const currentTheme = themeResult.length > 0 ? themeResult[0].theme : 'light';
+
+      const accessToken = generateAccessToken({ 
+        username: loginUsername, 
+        guestMode: false, 
+        currentTheme: currentTheme, 
+        error: null 
+      });
+      const refreshToken = generateRefreshToken({ 
+        username: loginUsername, 
+        guestMode: false, 
+        currentTheme: currentTheme, 
+        error: null 
+      });
+
+      const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
+      db.query(insertTokenQuery, [loginUsername, refreshToken, process.env.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
+        if (insertErr) {
+          console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
+          return res.status(500).json({ error: 'Ошибка сервера' });
+        }
+        res.status(200).json({ 
+          message: 'Вход в систему', 
+          accessToken: accessToken, 
+          refreshToken: refreshToken, 
+          username: loginUsername, 
+          jwtToken: accessToken 
+        });
+      });
     });
   });
 };
@@ -125,8 +161,28 @@ const refreshToken = async (req, res) => {
   });
 };
 
+const logoutUser = (req, res) => {
+  const { username, refreshToken, error } = req.body; 
+
+  db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshToken], (deleteErr, deleteResult) => {
+    if (deleteErr) {
+      console.error('Ошибка при удалении refresh token из базы данных: ', deleteErr);
+      return res.sendStatus(500);
+    }
+    res.json({ message: 'Успешный выход из системы' });
+  });
+
+  localStorage.removeItem('isLoggedIn');
+  localStorage.removeItem('username');
+  localStorage.removeItem('accessToken');
+  localStorage.removeItem('refreshToken');
+  res.status(200).json({ message: 'Вы успешно вышли из системы' });
+};
+
+
 module.exports = {
   registerUser,
   loginUser,
   refreshToken,
+  logoutUser
 };

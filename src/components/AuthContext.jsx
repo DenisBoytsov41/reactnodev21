@@ -6,17 +6,25 @@ export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const login = () => {
-    setIsLoggedIn(true);
-    localStorage.setItem('isLoggedIn', 'true');
+    setIsLoggedIn(prevIsLoggedIn => {
+      console.log("Я в login");
+      console.log(prevIsLoggedIn);
+      console.log("------------------------------------------");
+      localStorage.setItem('isLoggedIn', 'true');
+      return true;
+    });
   };
+  
 
   const logout = () => {
-    setIsLoggedIn(false);
-    localStorage.setItem('isLoggedIn', 'false');
+    setIsLoggedIn(prevIsLoggedIn => {
+      localStorage.setItem('isLoggedIn', 'false');
+      return false;
+    });
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, login, logout }}>
+    <AuthContext.Provider value={{ isLoggedIn, login, logout, setIsLoggedIn }}>
       {children}
     </AuthContext.Provider>
   );
