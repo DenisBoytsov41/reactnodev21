@@ -1,11 +1,24 @@
 body.light {
     background-color: #f0f0f0;
     color: #333;
+    text-align: left;
+    
+}
+body {
+    text-align: left;
+    padding-left: 0;
 }
 
+.containerPers {
+    padding-left: 0;
+    text-align: left;
+    margin: 0 auto;
+    padding: 50px 0;
+}
 body.dark {
     background-color: #333;
     color: #f0f0f0;
+    text-align: left;
 }
 
 button {
@@ -15,4 +28,5 @@ button {
     border: none;
     border-radius: 5px;
     cursor: pointer;
+    text-align: left;
 }

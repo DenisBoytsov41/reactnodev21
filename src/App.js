@@ -10,9 +10,10 @@ import GlobalAssets from './components/GlobalAssets';
 import { useCookie } from './components/useCookie';
 import './css/mainstyle.css';
 import './css/cockie.css';
-import './css/personal_cabinet.css';
 import { jwtDecode } from "jwt-decode" ;
 import clearExpiredTokens from './components/tokenUtils';
+import checkRefreshToken from './components/refreshTokenUtils';
+
 const schedule = require('node-schedule');
 
 function App() {
@@ -118,16 +119,21 @@ function App() {
     acceptCookie();
   };
 
+
+
   const job = schedule.scheduleJob('*/1 * * * *', () => {
     console.log("Вызвал 1 мин");
     clearExpiredTokens();
+    setTimeout(() => {
+      checkRefreshToken();
+    }, 2000);
   });
 
 
   return (
     <div className="container">
       {(jwtToken) ? (
-        <div>
+        <div className="containerPers">
           <GlobalAssets />
           <PersonalCabinet
             username={username}
@@ -139,7 +145,7 @@ function App() {
           />
         </div>        
       ) : (
-        <div>
+        <div className="containerGlobal">
           <GlobalAssets />
           <h2>Приветствуем на нашем сайте</h2>
           <MyButton id="loginButton" onClick={handleLoginBtnClick} className="btn">Авторизация</MyButton>

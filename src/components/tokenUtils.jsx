@@ -13,9 +13,31 @@ const clearExpiredTokens = () => {
   }
 
   if (refreshTokenExpiration.isBefore(currentDate)) {
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('refreshTokenExpiration');
+    fetch('http://localhost:5000/deleteRefreshToken', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        refreshToken: localStorage.getItem('refreshToken')
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Ошибка при удалении refreshToken из базы данных');
+      }
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('refreshTokenExpiration');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('accessTokenExpiration');
+      console.log('Токен успешно удален из базы данных');
+      window.location.reload();
+    })
+    .catch(error => {
+      console.error(error);
+    });
   }
+  
   if (accessTokenExpiration.isBefore(currentDate) && refreshTokenExpiration.isAfter(currentDate)) {
     console.log("Ало");
     axios.post(`http://localhost:5000/refreshToken/${localStorage.getItem('refreshToken')}`)

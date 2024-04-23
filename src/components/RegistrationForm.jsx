@@ -91,7 +91,7 @@ function RegistrationForm() {
           password: '',
           confirmPassword: '',
           agreeTerms: false,
-          age: '',
+          age: 'Мне 18 лет',
           gender: '',
           gender_f: 0
         });

@@ -6,6 +6,7 @@ const db = require('../db');
 const jwt = require('jsonwebtoken');
 const { validateRegistration, hashPassword, comparePasswords } = require('../validation');
 const crypto = require('crypto');
+const moment = require('moment-timezone');
 
 // Генерация случайной строки в формате hex
 const generateRandomSecret = () => {
@@ -111,10 +112,10 @@ const loginUser = async (req, res) => {
   });
 };
 
-
 // Регистрация пользователя
 const registerUser = async (req, res) => {
   const validationResult = validateRegistration(req.body);
+  console.log(req.body);
   if (!validationResult.success) {
     return res.status(402).json({ error: validationResult.errors });
   }
@@ -171,17 +172,10 @@ const refreshToken = (req, res) => {
           if (deleteErr) {
             console.error('Ошибка при удалении refreshToken из базы данных:', deleteErr);
           }
-          localStorage.removeItem('refreshToken');
+          //localStorage.removeItem('refreshToken');
           return res.status(403).json({ error: 'Недействительный refreshToken' });
         });
       } else {
-        db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshTokenFromStorage], (deleteErr, deleteResult) => {
-          if (deleteErr) {
-            console.error('Ошибка при удалении refreshToken из базы данных:', deleteErr);
-            return res.status(500).json({ error: 'Ошибка сервера' });
-          }
-          localStorage.removeItem('refreshToken');
-
           const accessToken = jwt.sign({ 
             username: decoded.username, 
             guestMode: decoded.guestMode, 
@@ -190,9 +184,56 @@ const refreshToken = (req, res) => {
           }, global.ACCESS_TOKEN_SECRET, { expiresIn: global.ACCESS_TOKEN_EXPIRATION });
 
           return res.status(200).json({ accessToken: accessToken });
-        });
       }
     });
+  });
+};
+
+const checkRefreshToken = (req, res) => {
+  console.log("Я хоть тут1");
+  const { refreshToken, refreshTokenExpiration } = req.body; 
+  console.log(refreshToken);
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Отсутствует refreshToken в запросе' });
+  }
+  db.query('SELECT * FROM UserToken WHERE refreshToken = ?', [refreshToken], (err, result) => {
+    console.log("Я хоть тут2");
+    if (err) {
+      console.error('Ошибка при проверке refreshToken в базе данных:', err);
+      console.log("Я хоть тут3");
+      return res.status(500).json({ error: 'Внутренняя ошибка сервера' });
+    }
+    if (result.length === 0) {
+      console.log("Я хоть тут4");
+      //localStorage.removeItem('refreshToken');
+      //localStorage.removeItem('accessToken');
+      return res.status(404).json({ error: 'refreshToken не найден' });
+    }
+    console.log("Я хоть тут5");
+    const dbRefreshToken = result[0];
+    const dbExpiration = dbRefreshToken.expiresIn;
+    const expirationMoment = moment(dbExpiration);
+    const formattedExpiration = expirationMoment.format('YYYY-MM-DD HH:mm:ss');
+    console.log(refreshTokenExpiration);
+    console.log(formattedExpiration);
+
+    if (refreshTokenExpiration && refreshTokenExpiration === formattedExpiration) {
+      console.log("Я хоть тут6");
+      return res.status(200).json({ massage: "Всё ок" });
+    } else {
+      console.log("Я хоть тут7");
+      db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshToken], (deleteErr, deleteResult) => {
+        if (deleteErr) {
+          console.log("Я хоть тут8");
+          console.error('Ошибка при удалении refreshToken из базы данных:', deleteErr);
+        }
+      });
+      console.log("Я хоть тут9");
+      //localStorage.removeItem('refreshToken');
+      //localStorage.removeItem('refreshTokenExpiration');
+      //localStorage.removeItem('accessToken');
+      return res.status(401).json({ error: 'refreshToken не найден в локальном хранилище или истек его срок действия' });
+    }
   });
 };
 
@@ -216,12 +257,39 @@ const logoutUser = (req, res) => {
     }
   });
 };
+const deleteRefreshToken = (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(400).json({ error: 'Отсутствует refreshToken в запросе' });
+  }
+  db.query('DELETE FROM UserToken WHERE refreshToken = ?', [refreshToken], (deleteErr, deleteResult) => {
+    if (deleteErr) {
+      console.error('Ошибка при удалении refreshToken из базы данных:', deleteErr);
+      return res.status(500).json({ error: 'Ошибка при удалении refreshToken из базы данных' });
+    }
+    console.log('Токен успешно удален из базы данных');
+    return res.status(200).json({ message: 'Токен успешно удален из базы данных' });
+  });
+};
 
-
+const fetchData = (req, res) => {
+  const sql = "SELECT login FROM users";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('Ошибка при выполнении запроса:', err);
+      res.status(500).json({ error: 'Ошибка при выполнении запроса' });
+      return;
+    }
+    res.json(result);
+  });
+};
 
 module.exports = {
   registerUser,
   loginUser,
   refreshToken,
-  logoutUser
+  logoutUser,
+  deleteRefreshToken,
+  checkRefreshToken,
+  fetchData
 };
