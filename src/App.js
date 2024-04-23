@@ -45,6 +45,19 @@ function App() {
     }
   }, [isLoggedIn, login, logout]);
 
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (accessToken) {
+      const decodedToken = jwtDecode(accessToken);
+      setUsername(decodedToken.username);
+      setJwtToken(accessToken);
+      setGuestMode(decodedToken.guestMode);
+      setCurrentTheme(decodedToken.currentTheme);
+      setError(decodedToken.error);
+    }
+  }, [localStorage.getItem('accessToken')]);
+  
+
   // Определения переменных
   const [username, setUsername] = useState('');
   const [jwtToken, setJwtToken] = useState('');
@@ -67,6 +80,19 @@ function App() {
   const handleThemeToggle = () => {
     setDarkMode(prevMode => !prevMode);
   };
+
+  useEffect(() => {
+    const handleStorageChange = () => {
+      window.location.reload();
+    };
+  
+    window.addEventListener('storage', handleStorageChange);
+  
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
+  
 
   useEffect(() => {
     const toggleTheme = () => {
@@ -92,15 +118,15 @@ function App() {
     acceptCookie();
   };
 
-  // Запуск расписания для проверки просроченных токенов каждые 5 минут
-  const job = schedule.scheduleJob('*/5 * * * *', () => {
+  const job = schedule.scheduleJob('*/1 * * * *', () => {
+    console.log("Вызвал 1 мин");
     clearExpiredTokens();
   });
 
 
   return (
     <div className="container">
-      {isLoggedIn ? (
+      {(jwtToken) ? (
         <div>
           <GlobalAssets />
           <PersonalCabinet

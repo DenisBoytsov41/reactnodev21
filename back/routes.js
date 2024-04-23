@@ -4,7 +4,7 @@ const { registerUser, loginUser, refreshToken, logoutUser } = require('./control
 
 router.post('/register', registerUser);
 router.post('/login', loginUser);
-router.post('/refresh-token', refreshToken);
 router.post('/logout', logoutUser);
+router.post('/refreshToken/:token', refreshToken);
 
 module.exports = router;

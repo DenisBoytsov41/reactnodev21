@@ -7,7 +7,7 @@ import moment from 'moment-timezone';
 
 const AuthContext = createContext();
 global.REFRESH_TOKEN_EXPIRATION = 3600
-global.ACCESS_TOKEN_EXPIRATION = 120
+global.ACCESS_TOKEN_EXPIRATION = 180
 
 export const AuthProvider = ({ children }) => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -30,9 +30,12 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     setIsLoggedIn(prevIsLoggedIn => {
+      console.log("logout");
       localStorage.setItem('isLoggedIn', 'false');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshTokenExpiration');
+      localStorage.removeItem('accessTokenExpiration');
       return false;
     });
   };

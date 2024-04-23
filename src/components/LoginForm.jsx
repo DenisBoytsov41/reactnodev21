@@ -99,7 +99,7 @@ const LoginForm = () => {
           </div>
         </div>
         <div className="g-recaptcha" data-sitekey="6LeUYYgpAAAAAHjo3qZ8wEhMcl4YkW-N6lQIvJGX" onChange={handleRecaptchaChange}></div>
-        <SubmitButton label="Войти" />
+        <SubmitButton label="Войти"/>
       </form>
     </div>
   );
