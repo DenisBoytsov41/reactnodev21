@@ -336,6 +336,112 @@ const fetchData = (req, res) => {
   });
 };
 
+const totalRecords = (req, res) => {
+  const sql = "SELECT COUNT(*) AS total FROM users";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('Ошибка при выполнении запроса:', err);
+      res.status(500).json({ error: 'Ошибка при выполнении запроса' });
+      return;
+    }
+    res.json(result);
+  });
+};
+
+const searchUsers = (req, res) => {
+  try {
+    const userSearch = req.params.userSearch;
+    console.log("Сейчас тут: " + req.params.userSearch);
+    
+    if (!userSearch) {
+      return res.status(400).json({ error: 'Пожалуйста, введите ключевое слово для поиска.' });
+    }
+    
+    const query = `SELECT * FROM users WHERE login LIKE '%${userSearch}%'`;
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Ошибка при выполнении запроса к базе данных:', err);
+        return res.status(500).json({ error: 'Произошла ошибка при выполнении запроса к базе данных.' });
+      }
+      
+      if (results.length > 0) {
+        res.json(results);
+      } else {
+        res.status(404).json({ message: 'По вашему запросу ничего не найдено.' });
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при выполнении запроса к базе данных:', error);
+    res.status(500).json({ error: 'Произошла ошибка при выполнении запроса к базе данных.' });
+  }
+};
+
+const searchUsers_2 = (req, res) => {
+  try {
+    const userSearch = req.params.userSearch;
+    console.log("Сейчас тут: " + req.params.userSearch);
+    
+    if (!userSearch) {
+      return res.status(400).json({ error: 'Пожалуйста, введите ключевое слово для поиска.' });
+    }
+    const searchWords = userSearch.split(' ');
+    const conditions = searchWords.map(word => `login LIKE '%${word}%'`).join(' OR ');
+  
+    const query = `SELECT * FROM users WHERE ${conditions}`;
+    
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error('Ошибка при выполнении запроса к базе данных:', err);
+        return res.status(500).json({ error: 'Произошла ошибка при выполнении запроса к базе данных.' });
+      }
+  
+      if (results.length > 0) {
+        res.json(results);
+      } else {
+        res.status(404).json({ message: 'По вашему запросу ничего не найдено.' });
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при выполнении запроса к базе данных:', error);
+    res.status(500).json({ error: 'Произошла ошибка при выполнении запроса к базе данных.' });
+  }
+};
+
+const countRecordsLastMonth = (req, res) => {
+  const date = new Date();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const firstDayOfMonth = new Date(year, month - 1, 1);
+  const lastDayOfMonth = new Date(year, month, 0);
+  
+  const beginDate = firstDayOfMonth.toISOString().slice(0, 10);
+  const endDate = lastDayOfMonth.toISOString().slice(0, 10);
+
+  const sql = `SELECT COUNT(*) AS record_count FROM userbd WHERE created_at >= '${beginDate}' AND created_at <= '${endDate}'`;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('Ошибка при выполнении запроса:', err);
+      res.status(500).json({ error: 'Ошибка при выполнении запроса' });
+      return;
+    }
+    res.json(result);
+  });
+};
+
+const lastAddedRecord = (req, res) => {
+  const sql = "SELECT * FROM userbd ORDER BY created_at DESC LIMIT 0,1";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error('Ошибка при выполнении запроса:', err);
+      res.status(500).json({ error: 'Ошибка при выполнении запроса' });
+      return;
+    }
+    res.json(result);
+  });
+};
+
+
 const updateTheme = (req, res) => {
   const { username, newTheme } = req.body;
 
@@ -359,6 +465,11 @@ module.exports = {
   deleteRefreshToken,
   checkRefreshToken,
   fetchData,
+  totalRecords,
   updateTokensWithTheme,
-  updateTheme
+  updateTheme,
+  countRecordsLastMonth,
+  lastAddedRecord,
+  searchUsers,
+  searchUsers_2
 };
