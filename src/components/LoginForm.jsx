@@ -50,7 +50,8 @@ const LoginForm = () => {
           grecaptcha.reset();
         }
         login(data.refreshToken,data.accessToken);
-      } else {
+      } 
+      else {
         const errorData = await response.json();
         console.error(errorData.error);
         setLoginError(errorData.error);

@@ -34,9 +34,36 @@ const generateRefreshToken = (user) => {
   }, global.REFRESH_TOKEN_SECRET, { expiresIn: global.REFRESH_TOKEN_EXPIRATION });
 };
 
+const updateTokensWithTheme = (req, res) => {
+  const { loginUsername, newAccessTokenDate, newRefreshTokenDate } = req.body;
+
+  const newaccessToken = generateAccessToken(newAccessTokenDate);
+  console.log("Новый access: " + newaccessToken);
+  const newrefreshToken = generateRefreshToken(newRefreshTokenDate);
+  console.log("Новый refresh: " + newrefreshToken);
+
+  const updateTokenQuery = 'UPDATE UserToken SET refreshToken = ?, createdAt = NOW(), expiresIn = NOW() + INTERVAL ? SECOND WHERE user = ?';
+  db.query(updateTokenQuery, [newrefreshToken, global.REFRESH_TOKEN_EXPIRATION, loginUsername], (updateErr, updateResult) => {
+    if (updateErr) {
+      console.error('Ошибка при обновлении refresh token в базе данных: ', updateErr);
+      console.log('Ты лох оно ниже не спустилось');
+      return res.status(500).json({ error: 'Ошибка сервера' });
+    }
+    console.log('Ты не лох оно ниже спустилось');
+    return res.status(200).json({ 
+      message: 'Токены успешно обновлены', 
+      accessToken: newaccessToken, 
+      refreshToken: newrefreshToken, 
+      username: loginUsername, 
+      jwtToken: newaccessToken 
+    });
+  });
+};
+
+
 const loginUser = async (req, res) => {
   const { loginUsername, loginPassword } = req.body;
-  console.log("Я тут2312");
+
   // Генерация ACCESS_TOKEN_SECRET и REFRESH_TOKEN_SECRET
   global.ACCESS_TOKEN_SECRET = generateRandomSecret();
   global.REFRESH_TOKEN_SECRET = generateRandomSecret();
@@ -81,32 +108,57 @@ const loginUser = async (req, res) => {
         currentTheme = themeResult[0].theme;
       }
 
-      const accessToken = generateAccessToken({ 
-        username: loginUsername, 
-        guestMode: false, 
-        currentTheme: currentTheme, 
-        error: null 
-      });
-      const refreshToken = generateRefreshToken({ 
-        username: loginUsername, 
-        guestMode: false, 
-        currentTheme: currentTheme, 
-        error: null 
-      });
-
-      const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
-      db.query(insertTokenQuery, [loginUsername, refreshToken, global.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
-        if (insertErr) {
-          console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
+      const refreshTokenQuery = 'SELECT refreshToken FROM UserToken WHERE user = ? AND expiresIn > NOW()';
+      db.query(refreshTokenQuery, [loginUsername], (tokenErr, tokenResult) => {
+        if (tokenErr) {
+          console.error('Ошибка при проверке refresh token: ', tokenErr);
           return res.status(500).json({ error: 'Ошибка сервера' });
         }
-        res.status(200).json({ 
-          message: 'Вход в систему', 
-          accessToken: accessToken, 
-          refreshToken: refreshToken, 
-          username: loginUsername, 
-          jwtToken: accessToken 
-        });
+
+        if (tokenResult.length > 0) {
+          const refreshToken = tokenResult[0].refreshToken;
+          const accessToken = generateAccessToken({ 
+            username: loginUsername, 
+            guestMode: false, 
+            currentTheme: currentTheme,
+            error: null 
+          });
+          return res.status(200).json({ 
+            message: 'Вход в систему', 
+            accessToken: accessToken, 
+            refreshToken: refreshToken, 
+            username: loginUsername, 
+            currentTheme: currentTheme 
+          });
+        } else {
+          const accessToken = generateAccessToken({ 
+            username: loginUsername, 
+            guestMode: false, 
+            currentTheme: currentTheme, 
+            error: null 
+          });
+          const refreshToken = generateRefreshToken({ 
+            username: loginUsername, 
+            guestMode: false, 
+            currentTheme: currentTheme, 
+            error: null 
+          });
+
+          const insertTokenQuery = 'INSERT INTO UserToken (user, refreshToken, expiresIn) VALUES (?, ?, NOW() + INTERVAL ? SECOND)';
+          db.query(insertTokenQuery, [loginUsername, refreshToken, global.REFRESH_TOKEN_EXPIRATION], (insertErr, insertResult) => {
+            if (insertErr) {
+              console.error('Ошибка при сохранении refresh token в базе данных: ', insertErr);
+              return res.status(500).json({ error: 'Ошибка сервера' });
+            }
+            res.status(200).json({ 
+              message: 'Вход в систему', 
+              accessToken: accessToken, 
+              refreshToken: refreshToken, 
+              username: loginUsername, 
+              currentTheme: currentTheme 
+            });
+          });
+        }
       });
     });
   });
@@ -284,6 +336,21 @@ const fetchData = (req, res) => {
   });
 };
 
+const updateTheme = (req, res) => {
+  const { username, newTheme } = req.body;
+
+  const updateQuery = 'UPDATE userstheme SET theme = ? WHERE login = ?';
+  db.query(updateQuery, [newTheme, username], (err, result) => {
+    if (err) {
+      console.error('Ошибка при обновлении темы в базе данных:', err);
+      return res.status(500).json({ error: 'Ошибка сервера' });
+    }
+    console.log('Тема успешно обновлена в базе данных');
+    return res.status(200).json({ message: 'Тема успешно обновлена в базе данных' });
+  });
+};
+
+
 module.exports = {
   registerUser,
   loginUser,
@@ -291,5 +358,7 @@ module.exports = {
   logoutUser,
   deleteRefreshToken,
   checkRefreshToken,
-  fetchData
+  fetchData,
+  updateTokensWithTheme,
+  updateTheme
 };

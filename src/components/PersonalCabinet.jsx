@@ -5,13 +5,15 @@ import MyButton from './MyButton';
 import '../css/personal_cabinet.css';
 import '../css/secondstyle.css';
 import Api from '../components/api/api'
+import { jwtDecode } from "jwt-decode" ;
 
 const PersonalCabinet = ({ username, jwtToken, guestMode, currentTheme, error }) => {
   const { logout } = useAuth();
   const [userData, setUserData] = useState('');
   const [showData, setShowData] = useState(false);
   const { fetchDataFromDatabase } = Api();
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(currentTheme === 'dark');
+  const { login, isLoggedIn } = useAuth(); 
   console.log("Токен: " + jwtToken);
 
   const handleFetchData = async () => {
@@ -65,8 +67,68 @@ const PersonalCabinet = ({ username, jwtToken, guestMode, currentTheme, error })
     }
   };
   const handleThemeToggle = () => {
+    const newTheme = darkMode ? 'light' : 'dark';
     setDarkMode(prevMode => !prevMode);
+    updateTheme(newTheme);
   };
+
+  const updateTheme = async (newTheme) => {
+    try {
+      const themeResponse = await fetch('http://localhost:5000/updateTheme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: username,
+          newTheme: newTheme
+        })
+      });
+      if (!themeResponse.ok) {
+        console.error('Ошибка при обновлении темы в базе данных:', themeResponse.status);
+        return;
+      }
+      console.log('Тема успешно обновлена в базе данных');
+
+      const decodedAccessToken = jwtDecode(localStorage.getItem('accessToken'));
+      const decodedRefreshToken = jwtDecode(localStorage.getItem('refreshToken'));
+      const newAccessTokenDate = { ...decodedAccessToken, currentTheme: newTheme };
+      console.log(newAccessTokenDate)
+      const newRefreshTokenDate = { ...decodedRefreshToken, currentTheme: newTheme };
+      console.log(newRefreshTokenDate)
+
+      const tokensResponse = await fetch('http://localhost:5000/updateTokensWithTheme', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          loginUsername: username,
+          newAccessTokenDate: newAccessTokenDate,
+          newRefreshTokenDate: newRefreshTokenDate,
+        })
+      });
+      if (!tokensResponse.ok) {
+        console.error('Ошибка при обновлении токенов в базе данных:', tokensResponse.status);
+        return;
+      }
+      if (tokensResponse.ok) {
+        const data = await tokensResponse.json();
+        console.log('Токены успешно обновлены в базе данных');
+        console.log(data);
+        login(data.refreshToken,data.accessToken);
+      } 
+      else {
+        const errorData = await tokensResponse.json();
+        console.error(errorData.error);
+      }
+    } catch (error) {
+      console.error('Ошибка при обновлении темы и токенов:', error);
+    }
+  };
+
+  
+  
 
   return (
     <div className={darkMode ? 'dark' : 'light'}>
